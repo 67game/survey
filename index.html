@@ -258,20 +258,6 @@
           <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://docs.example.com">
         </div>
         <div class="field">
-          <label class="field-label">Networks &amp; key contract addresses</label>
-          <span class="field-hint">List each network with pool, factory, registry, or other key addresses.</span>
-          <div class="dynamic-table" id="networks-table">
-            <div class="table-header">
-              <span>Network</span>
-              <span>Contract Addresses</span>
-              <span style="flex: 0 0 36px;"></span>
-            </div>
-            <!-- rows injected by JS -->
-            <button type="button" class="add-row-btn" onclick="addNetworkRow()">+ Add network</button>
-          </div>
-        </div>
-
-        <div class="field">
           <label class="field-label" for="upcomingDeployments">Upcoming network deployments?</label>
           <input type="text" id="upcomingDeployments" name="upcomingDeployments" placeholder="e.g., Deploying to Base in Q2">
         </div>
@@ -986,11 +972,6 @@
       debouncedSave();
     }
 
-    window.addNetworkRow = () => addRow('networks-table', [
-      { ph: 'e.g., Ethereum, Arbitrum, Base' },
-      { tag: 'textarea', ph: 'Key contract addresses', cls: 'code-input' }
-    ]);
-
     window.addRewardRow = () => addRow('rewards-table', [
       { ph: 'Token name' },
       { ph: 'Symbol' },
@@ -1029,9 +1010,6 @@
       });
     }
 
-    // Init one network row
-    addNetworkRow();
-
     // =========================================================
     // Auto-save
     // =========================================================
@@ -1065,7 +1043,6 @@
         }
       });
 
-      data.tables.networks = serializeTable('networks-table');
       data.tables.rewards = serializeTable('rewards-table');
       data.tables.fees = serializeTable('fee-table-rows');
 
@@ -1102,7 +1079,7 @@
       // 3) Restore dynamic tables
       function restoreTable(tableId, rows, addFn) {
         document.querySelectorAll(`#${tableId} .table-row`).forEach(r => r.remove());
-        if (!rows || rows.length === 0) { if (tableId === 'networks-table') addFn(); return; }
+        if (!rows || rows.length === 0) { addFn(); return; }
         rows.forEach(vals => {
           addFn();
           const allRows = document.querySelectorAll(`#${tableId} .table-row`);
@@ -1112,7 +1089,6 @@
         });
       }
 
-      restoreTable('networks-table', data.tables.networks, addNetworkRow);
       restoreTable('rewards-table', data.tables.rewards, addRewardRow);
 
       // 4) Restore fee table values (rows were created by checkbox triggers)
@@ -1168,7 +1144,6 @@
           protocolName: v('protocolName'),
           protocolVersion: v('protocolVersion'),
           websiteUrl: v('websiteUrl'),
-          networks: collectTableData('networks-table', ['network', 'contractAddresses']),
           upcomingDeployments: v('upcomingDeployments')
         },
         vaultArchitecture: {
@@ -1391,7 +1366,7 @@
       requireText('protocolName', 'Protocol name');
       requireText('protocolVersion', 'Protocol version');
       requireText('websiteUrl', 'Website URL');
-      requireTable('networks-table', 'Networks & contracts');
+
 
       // --- Section 2: Vault Architecture ---
       requireRadio('erc4626', 'ERC-4626 compliance');
@@ -1554,12 +1529,10 @@
       if (!confirm('Clear all form data and saved progress? This cannot be undone.')) return;
       try { localStorage.removeItem('vaultsfyi-form'); } catch (e) {}
       form.reset();
-      document.querySelectorAll('#networks-table .table-row').forEach(r => r.remove());
       document.querySelectorAll('#rewards-table .table-row').forEach(r => r.remove());
       document.getElementById('fee-table-rows').innerHTML = '';
       document.querySelectorAll('.conditional').forEach(el => el.classList.remove('visible'));
       document.getElementById('restored-banner').classList.remove('visible');
-      addNetworkRow();
       showToast('Form cleared');
     };
 
