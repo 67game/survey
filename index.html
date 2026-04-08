@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vaults.fyi — Protocol Integration Questionnaire</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --border: #e2e4e9;
+      --text: #1a1d26;
+      --text-secondary: #6b7280;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --code-bg: #f1f3f5;
+      --success: #059669;
+      --danger: #dc2626;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 740px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    header { text-align: center; margin-bottom: 0.5rem; }
+    header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.375rem; }
+    header p { color: var(--text-secondary); font-size: 0.925rem; max-width: 520px; margin: 0 auto; }
+
+    /* Table of contents */
+    .toc {
+      display: flex; gap: 0.375rem; padding: 0.75rem 0; margin-bottom: 1rem;
+      overflow-x: auto; position: sticky; top: 0; background: var(--bg);
+      z-index: 100; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .toc::-webkit-scrollbar { display: none; }
+    .toc a {
+      flex-shrink: 0; padding: 0.3rem 0.65rem; border-radius: 100px;
+      font-size: 0.775rem; font-weight: 500; color: var(--text-secondary);
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Sections */
+    .section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      margin-bottom: 1.25rem; box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .section-number {
+      background: var(--accent); color: white; width: 26px; height: 26px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    .subsection-title {
+      font-size: 0.95rem; font-weight: 600; margin: 1.5rem 0 0.75rem;
+      padding-top: 1rem; border-top: 1px solid var(--border);
+    }
+
+    /* Fields */
+    .field { margin-bottom: 1.15rem; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.3rem; }
+    .field-hint { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; font-style: italic; }
+
+    input[type="text"], input[type="url"], input[type="email"], textarea, select {
+      width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 0.875rem; font-family: inherit;
+      background: white; transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .code-input {
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace !important;
+      font-size: 0.825rem !important; background: var(--code-bg) !important;
+    }
+
+    textarea { resize: vertical; min-height: 56px; }
+    textarea.code-input { min-height: 72px; }
+
+    .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+    .radio-group label, .checkbox-group label {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.875rem; cursor: pointer;
+    }
+
+    /* Conditional sections */
+    .conditional { display: none; }
+    .conditional.visible { display: block; animation: slideDown 0.2s ease; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .skip-hint {
+      background: var(--accent-light); color: var(--accent);
+      padding: 0.45rem 0.75rem; border-radius: 6px;
+      font-size: 0.8rem; margin-bottom: 1rem; font-weight: 500;
+    }
+
+    /* Dynamic tables */
+    .dynamic-table { margin-top: 0.25rem; }
+    .table-header {
+      display: flex; gap: 0.5rem; margin-bottom: 0.25rem; padding-right: 40px;
+    }
+    .table-header span {
+      flex: 1; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      color: var(--text-secondary); letter-spacing: 0.04em;
+    }
+    .table-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start; }
+    .table-row input, .table-row textarea { flex: 1; }
+
+    .remove-row {
+      background: none; border: 1px solid var(--border); color: var(--text-secondary);
+      cursor: pointer; padding: 0.45rem 0.55rem; border-radius: 6px;
+      font-size: 0.9rem; line-height: 1; flex-shrink: 0; transition: all 0.15s;
+    }
+    .remove-row:hover { color: var(--danger); border-color: var(--danger); }
+
+    .add-row-btn {
+      background: none; border: 1px dashed var(--border); color: var(--text-secondary);
+      padding: 0.45rem 1rem; border-radius: 6px; cursor: pointer;
+      font-size: 0.825rem; width: 100%; transition: all 0.15s; margin-top: 0.25rem;
+    }
+    .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Action buttons */
+    .actions {
+      display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.875rem;
+      font-weight: 500; cursor: pointer; border: 1px solid transparent;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: white; border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: white; border-color: var(--border); color: var(--danger); }
+    .btn-danger:hover { border-color: var(--danger); background: #fef2f2; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--text); color: white;
+      padding: 0.7rem 1.15rem; border-radius: 8px; font-size: 0.875rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(100px);
+      opacity: 0; transition: all 0.3s; z-index: 1000;
+    }
+    .toast.visible { transform: translateY(0); opacity: 1; }
+
+    /* Restored banner */
+    .restored-banner {
+      background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+      padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.825rem;
+      margin-bottom: 1rem; display: none; justify-content: space-between; align-items: center;
+    }
+    .restored-banner.visible { display: flex; }
+    .restored-banner button {
+      background: none; border: none; color: #065f46; cursor: pointer;
+      font-size: 0.8rem; text-decoration: underline; font-family: inherit;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 1rem 1rem 3rem; }
+      .section { padding: 1.25rem; }
+      .table-row { flex-direction: column; }
+      .table-header { display: none; }
+      .remove-row { align-self: flex-end; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>vaults.fyi &mdash; Protocol Integration</h1>
+      <p>This helps our engineering team scope and build your integration. Follow the skip instructions &mdash; most protocols only need about half the questions.</p>
+    </header>
+
+    <div class="restored-banner" id="restored-banner">
+      <span>Your previous progress has been restored.</span>
+      <button onclick="clearForm()">Clear &amp; start over</button>
+    </div>
+
+    <nav class="toc">
+      <a href="#s1">1. Overview</a>
+      <a href="#s2">2. Architecture</a>
+      <a href="#s3">3. Deposits</a>
+      <a href="#s4">4. Rewards</a>
+      <a href="#s5">5. Limits</a>
+      <a href="#s6">6. Fees</a>
+      <a href="#s7">7. Events</a>
+      <a href="#s8">8. Allocation</a>
+      <a href="#s9">9. Other</a>
+    </nav>
+
+    <form id="questionnaire" autocomplete="off">
+
+      <!-- ===================== SECTION 1 ===================== -->
+      <div class="section" id="s1">
+        <div class="section-title"><span class="section-number">1</span> Protocol Overview</div>
+
+        <div class="field">
+          <label class="field-label" for="protocolName">Protocol name</label>
+          <input type="text" id="protocolName" name="protocolName" placeholder="e.g., Morpho">
+        </div>
+        <div class="field">
+          <label class="field-label" for="protocolVersion">Protocol version / product</label>
+          <input type="text" id="protocolVersion" name="protocolVersion" placeholder="e.g., Morpho Blue, Aave V3">
+        </div>
+        <div class="field">
+          <label class="field-label" for="websiteUrl">Website &amp; documentation URL</label>
+          <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://docs.example.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Networks &amp; key contract addresses</label>
+          <span class="field-hint">List each network with pool, factory, registry, or other key addresses.</span>
+          <div class="dynamic-table" id="networks-table">
+            <div class="table-header">
+              <span>Network</span>
+              <span>Contract Addresses</span>
+              <span style="flex: 0 0 36px;"></span>
+            </div>
+            <!-- rows injected by JS -->
+            <button type="button" class="add-row-btn" onclick="addNetworkRow()">+ Add network</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="upcomingDeployments">Upcoming network deployments?</label>
+          <input type="text" id="upcomingDeployments" name="upcomingDeployments" placeholder="e.g., Deploying to Base in Q2">
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 2 ===================== -->
+      <div class="section" id="s2">
+        <div class="section-title"><span class="section-number">2</span> Vault Architecture</div>
+
+        <div class="field">
+          <label class="field-label">Are your vaults ERC-4626 compliant?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="erc4626" value="yes"> Yes</label>
+            <label><input type="radio" name="erc4626" value="no"> No</label>
+            <label><input type="radio" name="erc4626" value="partially"> Partially</label>
+          </div>
+        </div>
+
+        <div class="skip-hint conditional" id="s2-skip-hint">Fully ERC-4626 &mdash; sections 2A&ndash;2C skipped. Scroll to 2D (Vault Discovery).</div>
+
+        <!-- 2A: Position Token -->
+        <div class="conditional" id="s2-non4626">
+          <h4 class="subsection-title">2A. Position Token</h4>
+          <div class="field">
+            <label class="field-label" for="positionTokenName">What token do depositors hold?</label>
+            <span class="field-hint">e.g., aToken, cToken, receipt token, LP token</span>
+            <input type="text" id="positionTokenName" name="positionTokenName" placeholder="e.g., aToken">
+          </div>
+          <div class="field">
+            <label class="field-label" for="positionTokenAddress">Example token address (mainnet)</label>
+            <input type="text" id="positionTokenAddress" name="positionTokenAddress" class="code-input" placeholder="0x...">
+          </div>
+          <div class="field">
+            <label class="field-label" for="positionTokenAdditional">If the receipt / LP token address differs by network or vault, list those too</label>
+            <textarea id="positionTokenAdditional" name="positionTokenAdditional" class="code-input" rows="2" placeholder="Network: address&#10;Network: address"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label">Rebasing or share-based?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="positionTokenType" value="rebasing"> Rebasing (balance changes)</label>
+              <label><input type="radio" name="positionTokenType" value="share-based"> Share-based (value per share increases)</label>
+              <label><input type="radio" name="positionTokenType" value="other"> Other</label>
+            </div>
+          </div>
+          <div class="conditional" id="s2a-other">
+            <div class="field">
+              <input type="text" id="positionTokenTypeOther" name="positionTokenTypeOther" placeholder="Describe the token model">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="underlyingAssetFunction">Function to get the underlying asset address</label>
+            <input type="text" id="underlyingAssetFunction" name="underlyingAssetFunction" class="code-input" placeholder="e.g., asset(), UNDERLYING_ASSET_ADDRESS()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="multiAssetInfo">If multi-asset, list supported deposit/redeem assets per vault/network</label>
+            <textarea id="multiAssetInfo" name="multiAssetInfo" rows="2" placeholder="Leave blank if single-asset"></textarea>
+          </div>
+
+          <!-- 2B: Share Price -->
+          <h4 class="subsection-title">2B. Share Price / Exchange Rate</h4>
+          <div class="field">
+            <label class="field-label" for="sharePriceCallChain">What is the exact call chain to compute price per share?</label>
+            <span class="field-hint">Example: "Call vault.hook() &rarr; Teller address. Then teller.accountant() &rarr; Accountant address. Then accountant.getRate() &rarr; price per share."</span>
+            <textarea id="sharePriceCallChain" name="sharePriceCallChain" class="code-input" rows="3" placeholder="Describe the call chain step by step"></textarea>
+          </div>
+
+          <!-- 2C: TVL -->
+          <h4 class="subsection-title">2C. TVL</h4>
+          <div class="field">
+            <label class="field-label" for="totalDepositsFunction">Function that returns total deposits in underlying terms</label>
+            <input type="text" id="totalDepositsFunction" name="totalDepositsFunction" class="code-input" placeholder="e.g., totalAssets(), getTotalDeposits()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="availableLiquidityFunction">Function that returns currently available liquidity for instant withdrawals (if different)</label>
+            <input type="text" id="availableLiquidityFunction" name="availableLiquidityFunction" class="code-input" placeholder="Leave blank if same as total deposits">
+          </div>
+        </div>
+
+        <!-- 2D: Vault Discovery (always shown) -->
+        <h4 class="subsection-title">2D. Vault Discovery</h4>
+        <div class="field">
+          <label class="field-label">How should we find all vaults/markets? (check all that apply)</label>
+          <div class="checkbox-group" style="flex-direction: column; gap: 0.5rem;">
+
+            <label><input type="checkbox" id="discovery-factory"> Factory contract &mdash; emits events on vault creation</label>
+            <div class="conditional" id="discovery-factory-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+              <div class="field">
+                <label class="field-label" for="factoryAddresses">Factory address(es) per network</label>
+                <textarea id="factoryAddresses" name="factoryAddresses" class="code-input" rows="2" placeholder="Ethereum: 0x...&#10;Arbitrum: 0x..."></textarea>
+              </div>
+              <div class="field">
+                <label class="field-label" for="factoryEventSignature">Event signature</label>
+                <input type="text" id="factoryEventSignature" name="factoryEventSignature" class="code-input" placeholder="e.g., CreateMetaMorpho(address indexed metaMorpho, ...)">
+              </div>
+              <div class="field">
+                <label class="field-label" for="factoryDeploymentBlocks">Deployment block per network</label>
+                <textarea id="factoryDeploymentBlocks" name="factoryDeploymentBlocks" class="code-input" rows="2" placeholder="Ethereum: 18900000&#10;Arbitrum: 170000000"></textarea>
+              </div>
+            </div>
+
+            <label><input type="checkbox" id="discovery-registry"> Registry / API</label>
+            <div class="conditional" id="discovery-registry-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+              <div class="field">
+                <label class="field-label" for="registryAddress">Contract address or API URL</label>
+                <input type="text" id="registryAddress" name="registryAddress" class="code-input" placeholder="0x... or https://api.example.com/vaults">
+              </div>
+              <div class="field">
+                <label class="field-label" for="registryFunction">Function or endpoint</label>
+                <input type="text" id="registryFunction" name="registryFunction" class="code-input" placeholder="e.g., getAllVaults(), GET /v1/vaults">
+              </div>
+            </div>
+
+            <label><input type="checkbox" id="discovery-fixedList"> Fixed list &mdash; provide addresses per network</label>
+            <div class="conditional" id="discovery-fixedList-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+              <div class="field">
+                <label class="field-label" for="fixedListAddresses">Vault addresses (CSV or one per line)</label>
+                <textarea id="fixedListAddresses" name="fixedListAddresses" class="code-input" rows="3" placeholder="Ethereum:&#10;0x...&#10;0x..."></textarea>
+              </div>
+            </div>
+
+            <label><input type="checkbox" id="discovery-other"> Other</label>
+            <div class="conditional" id="discovery-other-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+              <div class="field">
+                <textarea id="discoveryOtherDescription" name="discoveryOtherDescription" rows="2" placeholder="Describe how to discover vaults"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Vault creation model</label>
+          <div class="radio-group">
+            <label><input type="radio" name="vaultCreation" value="permissionless"> Permissionless</label>
+            <label><input type="radio" name="vaultCreation" value="governance-gated"> Governance-gated</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 3 ===================== -->
+      <div class="section" id="s3">
+        <div class="section-title"><span class="section-number">3</span> Deposits &amp; Withdrawals</div>
+
+        <!-- 3A: Deposits -->
+        <h4 class="subsection-title" style="margin-top: 0; padding-top: 0; border-top: none;">3A. Deposits</h4>
+        <div class="field">
+          <label class="field-label">Standard ERC-4626 deposit? (<code>approve</code> &rarr; <code>deposit(assets, receiver)</code>)</label>
+          <div class="radio-group">
+            <label><input type="radio" name="standardDeposit" value="yes"> Yes</label>
+            <label><input type="radio" name="standardDeposit" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s3a-custom">
+          <div class="field">
+            <label class="field-label" for="depositFunction">Deposit function signature</label>
+            <input type="text" id="depositFunction" name="depositFunction" class="code-input" placeholder="e.g., deposit(address asset, uint256 amount, uint256 minShares)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="depositTargetContract">Target contract (vault itself, router, teller?)</label>
+            <input type="text" id="depositTargetContract" name="depositTargetContract" placeholder="e.g., Router at 0x...">
+          </div>
+          <div class="field">
+            <label class="field-label">Approval pattern</label>
+            <div class="radio-group">
+              <label><input type="radio" name="approvalPattern" value="erc20-approve"> Standard ERC-20 approve</label>
+              <label><input type="radio" name="approvalPattern" value="permit2"> Permit2</label>
+              <label><input type="radio" name="approvalPattern" value="other"> Other</label>
+            </div>
+          </div>
+          <div class="conditional" id="s3a-approval-other">
+            <div class="field">
+              <input type="text" id="approvalPatternOther" name="approvalPatternOther" placeholder="Describe the approval pattern">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="depositSpecialParams">Special parameters? (referral codes, minimums, deadlines)</label>
+            <textarea id="depositSpecialParams" name="depositSpecialParams" rows="2" placeholder="Describe any special parameters"></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Is deposit ever async / request-based?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="asyncDeposit" value="yes"> Yes</label>
+            <label><input type="radio" name="asyncDeposit" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s3a-async">
+          <div class="field">
+            <label class="field-label" for="asyncDepositRequest">Request function signature</label>
+            <input type="text" id="asyncDepositRequest" name="asyncDepositRequest" class="code-input" placeholder="e.g., requestDeposit(uint256 amount, address receiver)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="asyncDepositClaim">Claim / finalize function signature</label>
+            <input type="text" id="asyncDepositClaim" name="asyncDepositClaim" class="code-input" placeholder="e.g., claimDeposit(address receiver)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="asyncDepositContracts">Contract address(es)</label>
+            <textarea id="asyncDepositContracts" name="asyncDepositContracts" class="code-input" rows="2" placeholder="0x..."></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="asyncDepositPending">Function(s) to read pending / claimable deposit state for a user</label>
+            <input type="text" id="asyncDepositPending" name="asyncDepositPending" class="code-input" placeholder="e.g., pendingDeposit(address user)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="asyncDepositWaitTime">Typical wait time</label>
+            <input type="text" id="asyncDepositWaitTime" name="asyncDepositWaitTime" placeholder="e.g., ~24 hours">
+          </div>
+          <div class="field">
+            <label class="field-label">Does the claim window expire?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="asyncDepositExpires" value="yes"> Yes</label>
+              <label><input type="radio" name="asyncDepositExpires" value="no"> No</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3B: Withdrawal Type -->
+        <h4 class="subsection-title">3B. Withdrawal Type</h4>
+        <div class="field">
+          <div class="radio-group" style="flex-direction: column; gap: 0.5rem;">
+            <label><input type="radio" name="withdrawalType" value="instant"> Instant &mdash; assets returned in same tx</label>
+            <label><input type="radio" name="withdrawalType" value="request-redeem"> Request-redeem &mdash; submit request, claim later</label>
+            <label><input type="radio" name="withdrawalType" value="cooldown"> Cooldown &mdash; timer, then withdrawal window</label>
+            <label><input type="radio" name="withdrawalType" value="other"> Other</label>
+          </div>
+        </div>
+        <div class="conditional" id="s3b-other">
+          <div class="field">
+            <input type="text" id="withdrawalTypeOther" name="withdrawalTypeOther" placeholder="Describe the withdrawal mechanism">
+          </div>
+        </div>
+
+        <!-- 3C: Withdrawal Queue -->
+        <div class="conditional" id="s3c">
+          <h4 class="subsection-title">3C. Withdrawal Queue Details</h4>
+          <div class="field">
+            <label class="field-label" for="withdrawalQueueContract">Queue / cooldown contract address</label>
+            <input type="text" id="withdrawalQueueContract" name="withdrawalQueueContract" class="code-input" placeholder="0x...">
+          </div>
+          <div class="field">
+            <label class="field-label" for="withdrawalRequestFunction">Request function signature</label>
+            <input type="text" id="withdrawalRequestFunction" name="withdrawalRequestFunction" class="code-input" placeholder="e.g., requestRedeem(uint256 shares, address owner)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="withdrawalClaimFunction">Claim / finalize function signature</label>
+            <input type="text" id="withdrawalClaimFunction" name="withdrawalClaimFunction" class="code-input" placeholder="e.g., claimRedeem(address receiver)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="withdrawalPendingFunction">Function(s) to read pending / claimable redeem state for a user</label>
+            <input type="text" id="withdrawalPendingFunction" name="withdrawalPendingFunction" class="code-input" placeholder="e.g., pendingRedeem(address user)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="withdrawalWaitTime">Typical wait time</label>
+            <input type="text" id="withdrawalWaitTime" name="withdrawalWaitTime" placeholder="e.g., 7 days">
+          </div>
+          <div class="field">
+            <label class="field-label">Does the claim window expire?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="withdrawalExpires" value="yes"> Yes</label>
+              <label><input type="radio" name="withdrawalExpires" value="no"> No</label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Standard ERC-4626 withdrawal? (<code>redeem(shares, receiver, owner)</code>)</label>
+            <div class="radio-group">
+              <label><input type="radio" name="standardWithdrawal" value="yes"> Yes</label>
+              <label><input type="radio" name="standardWithdrawal" value="no"> No</label>
+            </div>
+          </div>
+          <div class="conditional" id="s3c-custom">
+            <div class="field">
+              <label class="field-label" for="customWithdrawalFunction">Withdrawal function signature</label>
+              <input type="text" id="customWithdrawalFunction" name="customWithdrawalFunction" class="code-input" placeholder="e.g., withdraw(uint256 assets, address receiver)">
+            </div>
+            <div class="field">
+              <label class="field-label" for="customWithdrawalContract">Target contract</label>
+              <input type="text" id="customWithdrawalContract" name="customWithdrawalContract" placeholder="e.g., Router at 0x...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 4 ===================== -->
+      <div class="section" id="s4">
+        <div class="section-title"><span class="section-number">4</span> Reward Tokens</div>
+
+        <div class="field">
+          <label class="field-label">Do depositors earn reward tokens (beyond vault yield)?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="hasRewards" value="yes"> Yes</label>
+            <label><input type="radio" name="hasRewards" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s4-details">
+
+          <!-- 4A: Distribution Mechanism -->
+          <h4 class="subsection-title">4A. Distribution Mechanism</h4>
+          <div class="field">
+            <div class="checkbox-group" style="flex-direction: column; gap: 0.5rem;">
+              <label><input type="checkbox" id="dist-onchain"> On-chain rewards controller</label>
+              <div class="conditional" id="dist-onchain-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+                <div class="field">
+                  <label class="field-label" for="rewardsControllerAddress">Controller / distributor address</label>
+                  <input type="text" id="rewardsControllerAddress" name="rewardsControllerAddress" class="code-input" placeholder="0x...">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="rewardsClaimFunction">Claim function signature</label>
+                  <input type="text" id="rewardsClaimFunction" name="rewardsClaimFunction" class="code-input" placeholder="e.g., claimRewards(address[] assets, uint256 amount, address to, address reward)">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="rewardsPendingFunction">Pending rewards function signature</label>
+                  <input type="text" id="rewardsPendingFunction" name="rewardsPendingFunction" class="code-input" placeholder="e.g., getUserRewards(address user, address[] assets, address reward)">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="rewardsEmissionFunction">Emission rate function signature</label>
+                  <input type="text" id="rewardsEmissionFunction" name="rewardsEmissionFunction" class="code-input" placeholder="e.g., getAssetData(address asset, address reward)">
+                </div>
+              </div>
+
+              <label><input type="checkbox" id="dist-offchain"> Off-chain / Merkle distribution</label>
+              <div class="conditional" id="dist-offchain-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+                <div class="field">
+                  <label class="field-label" for="offchainApiUrl">API for querying pending rewards per address</label>
+                  <input type="url" id="offchainApiUrl" name="offchainApiUrl" placeholder="https://api.example.com/rewards/{address}">
+                </div>
+              </div>
+
+              <label><input type="checkbox" id="dist-autocompound"> Auto-compounded &mdash; rewards fold into vault, no separate claim</label>
+
+              <label><input type="checkbox" id="dist-other"> Other</label>
+              <div class="conditional" id="dist-other-details" style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+                <div class="field">
+                  <textarea id="distOtherDescription" name="distOtherDescription" rows="2" placeholder="Describe the distribution mechanism"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4B: Reward Tokens List -->
+          <h4 class="subsection-title">4B. Reward Tokens</h4>
+          <div class="field">
+            <div class="dynamic-table" id="rewards-table">
+              <div class="table-header">
+                <span>Token</span>
+                <span>Symbol</span>
+                <span>Address (mainnet)</span>
+                <span>Networks</span>
+                <span style="flex: 0 0 36px;"></span>
+              </div>
+              <!-- rows injected by JS -->
+              <button type="button" class="add-row-btn" onclick="addRewardRow()">+ Add reward token</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Same reward tokens on all networks?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="rewardsSameNetworks" value="yes"> Yes</label>
+              <label><input type="radio" name="rewardsSameNetworks" value="no"> No</label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Emission rate type</label>
+            <div class="radio-group">
+              <label><input type="radio" name="emissionRateType" value="variable"> Variable</label>
+              <label><input type="radio" name="emissionRateType" value="fixed"> Fixed</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 5 ===================== -->
+      <div class="section" id="s5">
+        <div class="section-title"><span class="section-number">5</span> Capacity &amp; Limits</div>
+
+        <div class="field">
+          <label class="field-label">Are there deposit caps / supply limits?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="hasDepositCaps" value="yes"> Yes</label>
+            <label><input type="radio" name="hasDepositCaps" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s5-details">
+          <div class="field">
+            <label class="field-label" for="capFunction">Function to read current cap on-chain (contract + signature)</label>
+            <input type="text" id="capFunction" name="capFunction" class="code-input" placeholder="e.g., vault.cap() or config.supplyCap()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="utilizationFunction">Function to read utilization against cap</label>
+            <input type="text" id="utilizationFunction" name="utilizationFunction" class="code-input" placeholder="e.g., totalAssets() / cap()">
+          </div>
+          <div class="field">
+            <label class="field-label">Does <code>maxDeposit(address)</code> return correct remaining capacity?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="maxDepositCorrect" value="yes"> Yes</label>
+              <label><input type="radio" name="maxDepositCorrect" value="no"> No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 6 ===================== -->
+      <div class="section" id="s6">
+        <div class="section-title"><span class="section-number">6</span> Fees</div>
+
+        <div class="field">
+          <label class="field-label">Which fees apply? (check all)</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="fee-performance"> Performance</label>
+            <label><input type="checkbox" id="fee-management"> Management</label>
+            <label><input type="checkbox" id="fee-deposit"> Deposit</label>
+            <label><input type="checkbox" id="fee-withdrawal"> Withdrawal</label>
+            <label><input type="checkbox" id="fee-none"> None</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s6-details">
+          <div class="field">
+            <label class="field-label">Fee details</label>
+            <div class="dynamic-table">
+              <div class="table-header">
+                <span style="flex: 0.7;">Type</span>
+                <span>On-chain function</span>
+                <span style="flex: 0.6;">Format</span>
+              </div>
+              <div id="fee-table-rows">
+                <!-- rows generated by JS based on checkboxes -->
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="feeTakenFrom">Fee taken from yield, principal, or at deposit/withdrawal time?</label>
+            <input type="text" id="feeTakenFrom" name="feeTakenFrom" placeholder="e.g., Taken from yield at harvest">
+          </div>
+          <div class="field">
+            <label class="field-label" for="feeRecipient">Fee recipient</label>
+            <input type="text" id="feeRecipient" name="feeRecipient" placeholder="e.g., Protocol treasury, vault manager, curator">
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 7 ===================== -->
+      <div class="section" id="s7">
+        <div class="section-title"><span class="section-number">7</span> Events &amp; Indexing</div>
+
+        <div class="field">
+          <label class="field-label">Does the vault token emit standard ERC-20 <code>Transfer</code> events for mints/burns?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="standardTransfer" value="yes"> Yes</label>
+            <label><input type="radio" name="standardTransfer" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s7-aux-question">
+          <div class="field">
+            <label class="field-label">Are there additional events beyond standard Transfer that we should index?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="hasAuxiliaryEvents" value="yes"> Yes</label>
+              <label><input type="radio" name="hasAuxiliaryEvents" value="no"> No &mdash; standard Transfer only</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="conditional" id="s7-details">
+          <div class="field">
+            <label class="field-label" for="eventSignatures">Event signatures we should index</label>
+            <textarea id="eventSignatures" name="eventSignatures" class="code-input" rows="3" placeholder="e.g., Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares)"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="auxiliaryContracts">Auxiliary contracts that emit relevant events (staking, rewards, queue)</label>
+            <span class="field-hint">Include addresses and event signatures.</span>
+            <textarea id="auxiliaryContracts" name="auxiliaryContracts" class="code-input" rows="3" placeholder="Contract: 0x...&#10;Events: ..."></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label">Do raw indexed events map 1:1 to end-user LP balance changes?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="oneToOneMapping" value="yes"> Yes</label>
+              <label><input type="radio" name="oneToOneMapping" value="no"> No</label>
+            </div>
+          </div>
+          <div class="conditional" id="s7-normalize">
+            <div class="field">
+              <label class="field-label" for="normalizationNotes">How should we normalize them?</label>
+              <textarea id="normalizationNotes" name="normalizationNotes" rows="2" placeholder="Describe normalization approach"></textarea>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Are user addresses always in standard <code>from</code> / <code>to</code> topic positions?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="standardAddressPositions" value="yes"> Yes</label>
+              <label><input type="radio" name="standardAddressPositions" value="no"> No</label>
+              <label><input type="radio" name="standardAddressPositions" value="na"> N/A</label>
+            </div>
+          </div>
+          <div class="conditional" id="s7-address-fields">
+            <div class="field">
+              <label class="field-label" for="addressFieldNotes">Which topic indexes or decoded event fields contain the user addresses?</label>
+              <textarea id="addressFieldNotes" name="addressFieldNotes" rows="2" placeholder="Describe the event field layout"></textarea>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="emitterToVaultMapping">If events come from an auxiliary contract, how do we map that emitter back to the vault?</label>
+            <textarea id="emitterToVaultMapping" name="emitterToVaultMapping" rows="2" placeholder="e.g., Call provisioner.vault() to get the parent vault address"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 8 ===================== -->
+      <div class="section" id="s8">
+        <div class="section-title"><span class="section-number">8</span> Allocation &amp; Risk</div>
+
+        <div class="field">
+          <label class="field-label">Does the vault deploy capital to underlying markets/strategies?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="deploysCapital" value="yes"> Yes</label>
+            <label><input type="radio" name="deploysCapital" value="no"> No</label>
+          </div>
+        </div>
+
+        <div class="conditional" id="s8-details">
+          <div class="field">
+            <label class="field-label" for="activeAllocationsFunction">Function to read the list of active allocations</label>
+            <input type="text" id="activeAllocationsFunction" name="activeAllocationsFunction" class="code-input" placeholder="e.g., getSupplyQueue(), withdrawQueue()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="allocationAmountsFunction">Function to read amount allocated to each</label>
+            <input type="text" id="allocationAmountsFunction" name="allocationAmountsFunction" class="code-input" placeholder="e.g., supplyShares(marketId)">
+          </div>
+          <div class="field">
+            <label class="field-label" for="curatorManager">Is there a curator/manager? Who?</label>
+            <input type="text" id="curatorManager" name="curatorManager" placeholder="e.g., Gauntlet (multisig), DAO governance">
+          </div>
+          <div class="field">
+            <label class="field-label" for="allocationTimelock">Timelock on allocation changes?</label>
+            <input type="text" id="allocationTimelock" name="allocationTimelock" placeholder="e.g., 24h timelock via owner()">
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 9 ===================== -->
+      <div class="section" id="s9">
+        <div class="section-title"><span class="section-number">9</span> Anything Else</div>
+
+        <div class="field">
+          <label class="field-label" for="additionalNotes">Anything that doesn't fit above?</label>
+          <span class="field-hint">e.g., multi-asset vaults, cross-chain mechanics, KYC / whitelist requirements, fixed-term or locked positions</span>
+          <textarea id="additionalNotes" name="additionalNotes" rows="4" placeholder="Any additional context for the integration team"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="existingIntegrations">Existing integrations we can reference?</label>
+          <input type="text" id="existingIntegrations" name="existingIntegrations" placeholder="e.g., DefiLlama adapter, Zapper, Yearn SDK">
+        </div>
+        <div class="field">
+          <label class="field-label" for="githubRepo">Public GitHub repo</label>
+          <input type="url" id="githubRepo" name="githubRepo" placeholder="https://github.com/...">
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Action buttons -->
+    <div class="actions">
+      <button type="button" class="btn btn-primary" onclick="exportJSON()">Download JSON</button>
+      <button type="button" class="btn btn-secondary" onclick="copyJSON()">Copy JSON to clipboard</button>
+      <button type="button" class="btn btn-danger" onclick="clearForm()">Clear form</button>
+    </div>
+
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('questionnaire');
+
+    // =========================================================
+    // Helpers
+    // =========================================================
+    function toggle(id, show) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      show ? el.classList.add('visible') : el.classList.remove('visible');
+    }
+
+    function radioVal(name) {
+      const el = form.querySelector(`[name="${name}"]:checked`);
+      return el ? el.value : '';
+    }
+
+    function setupConditional(triggerName, callback) {
+      form.querySelectorAll(`[name="${triggerName}"]`).forEach(el => {
+        el.addEventListener('change', () => callback(radioVal(triggerName)));
+      });
+    }
+
+    function setupCheckbox(checkboxId, targetId) {
+      const cb = document.getElementById(checkboxId);
+      if (!cb) return;
+      cb.addEventListener('change', () => toggle(targetId, cb.checked));
+    }
+
+    // =========================================================
+    // Conditional logic
+    // =========================================================
+
+    // Section 2: ERC-4626
+    setupConditional('erc4626', val => {
+      toggle('s2-non4626', val !== 'yes');
+      toggle('s2-skip-hint', val === 'yes');
+    });
+
+    // 2A: Position token "other"
+    setupConditional('positionTokenType', val => toggle('s2a-other', val === 'other'));
+
+    // 2D: Discovery method checkboxes
+    setupCheckbox('discovery-factory', 'discovery-factory-details');
+    setupCheckbox('discovery-registry', 'discovery-registry-details');
+    setupCheckbox('discovery-fixedList', 'discovery-fixedList-details');
+    setupCheckbox('discovery-other', 'discovery-other-details');
+
+    // 3A: Standard deposit
+    setupConditional('standardDeposit', val => toggle('s3a-custom', val === 'no'));
+    setupConditional('approvalPattern', val => toggle('s3a-approval-other', val === 'other'));
+
+    // 3A: Async deposit
+    setupConditional('asyncDeposit', val => toggle('s3a-async', val === 'yes'));
+
+    // 3B: Withdrawal type
+    setupConditional('withdrawalType', val => {
+      toggle('s3c', val && val !== 'instant');
+      toggle('s3b-other', val === 'other');
+    });
+
+    // 3C: Standard withdrawal
+    setupConditional('standardWithdrawal', val => toggle('s3c-custom', val === 'no'));
+
+    // 4: Rewards
+    setupConditional('hasRewards', val => toggle('s4-details', val === 'yes'));
+    setupCheckbox('dist-onchain', 'dist-onchain-details');
+    setupCheckbox('dist-offchain', 'dist-offchain-details');
+    setupCheckbox('dist-other', 'dist-other-details');
+
+    // 5: Deposit caps
+    setupConditional('hasDepositCaps', val => toggle('s5-details', val === 'yes'));
+
+    // 6: Fees
+    const feeIds = ['fee-performance', 'fee-management', 'fee-deposit', 'fee-withdrawal', 'fee-none'];
+    feeIds.forEach(id => {
+      const cb = document.getElementById(id);
+      if (!cb) return;
+      cb.addEventListener('change', () => {
+        if (id === 'fee-none' && cb.checked) {
+          feeIds.filter(x => x !== 'fee-none').forEach(x => { document.getElementById(x).checked = false; });
+          toggle('s6-details', false);
+        } else {
+          if (cb.checked) document.getElementById('fee-none').checked = false;
+          const any = feeIds.filter(x => x !== 'fee-none').some(x => document.getElementById(x).checked);
+          toggle('s6-details', any);
+          updateFeeTable();
+        }
+      });
+    });
+
+    // 7: Events
+    setupConditional('standardTransfer', val => {
+      if (val === 'yes') { toggle('s7-aux-question', true); toggle('s7-details', false); }
+      else if (val === 'no') { toggle('s7-aux-question', false); toggle('s7-details', true); }
+    });
+    setupConditional('hasAuxiliaryEvents', val => toggle('s7-details', val === 'yes'));
+    setupConditional('oneToOneMapping', val => toggle('s7-normalize', val === 'no'));
+    setupConditional('standardAddressPositions', val => toggle('s7-address-fields', val === 'no'));
+
+    // 8: Allocation
+    setupConditional('deploysCapital', val => toggle('s8-details', val === 'yes'));
+
+    // =========================================================
+    // Dynamic tables
+    // =========================================================
+
+    function addRow(tableId, fields) {
+      const table = document.getElementById(tableId);
+      const row = document.createElement('div');
+      row.className = 'table-row';
+      row.innerHTML = fields.map(f => {
+        const cls = f.cls ? ` class="${f.cls}"` : '';
+        if (f.tag === 'textarea') {
+          return `<textarea${cls} placeholder="${f.ph}" rows="1"></textarea>`;
+        }
+        const ro = f.readonly ? ' readonly style="background:var(--code-bg);flex:0.7;"' : '';
+        const val = f.value ? ` value="${f.value}"` : '';
+        return `<input type="text"${cls}${ro}${val} placeholder="${f.ph}">`;
+      }).join('') +
+        '<button type="button" class="remove-row" onclick="removeRow(this)" title="Remove">&times;</button>';
+      table.insertBefore(row, table.querySelector('.add-row-btn'));
+      debouncedSave();
+    }
+
+    window.addNetworkRow = () => addRow('networks-table', [
+      { ph: 'e.g., Ethereum, Arbitrum, Base' },
+      { tag: 'textarea', ph: 'Key contract addresses', cls: 'code-input' }
+    ]);
+
+    window.addRewardRow = () => addRow('rewards-table', [
+      { ph: 'Token name' },
+      { ph: 'Symbol' },
+      { ph: '0x...', cls: 'code-input' },
+      { ph: 'Networks' }
+    ]);
+
+    window.removeRow = function(btn) {
+      btn.parentElement.remove();
+      debouncedSave();
+    };
+
+    function updateFeeTable() {
+      const container = document.getElementById('fee-table-rows');
+      // Save existing values keyed by type
+      const existing = {};
+      container.querySelectorAll('.table-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0]) existing[inputs[0].value.toLowerCase()] = {
+          fn: inputs[1]?.value || '',
+          fmt: inputs[2]?.value || ''
+        };
+      });
+      container.innerHTML = '';
+      ['performance', 'management', 'deposit', 'withdrawal'].forEach(type => {
+        if (!document.getElementById(`fee-${type}`).checked) return;
+        const label = type.charAt(0).toUpperCase() + type.slice(1);
+        const saved = existing[label.toLowerCase()] || {};
+        const row = document.createElement('div');
+        row.className = 'table-row';
+        row.innerHTML =
+          `<input type="text" value="${label}" readonly style="background:var(--code-bg);flex:0.7;">` +
+          `<input type="text" class="code-input" placeholder="e.g., performanceFee()" value="${saved.fn || ''}">` +
+          `<input type="text" placeholder="bps, WAD, %" style="flex:0.6;" value="${saved.fmt || ''}">`;
+        container.appendChild(row);
+      });
+    }
+
+    // Init one network row
+    addNetworkRow();
+
+    // =========================================================
+    // Auto-save
+    // =========================================================
+
+    let saveTimer;
+    function debouncedSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveForm, 400);
+    }
+
+    form.addEventListener('input', debouncedSave);
+    form.addEventListener('change', debouncedSave);
+
+    function serializeTable(tableId) {
+      const rows = [];
+      document.querySelectorAll(`#${tableId} .table-row`).forEach(row => {
+        const vals = [];
+        row.querySelectorAll('input, textarea').forEach(el => vals.push(el.value));
+        rows.push(vals);
+      });
+      return rows;
+    }
+
+    function saveForm() {
+      const data = { v: 1, inputs: {}, tables: {} };
+
+      form.querySelectorAll('input, textarea, select').forEach(el => {
+        if (el.closest('.dynamic-table')) return;
+        const key = el.name || el.id;
+        if (!key) return;
+        if (el.type === 'radio') {
+          if (el.checked) data.inputs[key] = el.value;
+        } else if (el.type === 'checkbox') {
+          data.inputs['__cb__' + key] = el.checked;
+        } else {
+          data.inputs[key] = el.value;
+        }
+      });
+
+      data.tables.networks = serializeTable('networks-table');
+      data.tables.rewards = serializeTable('rewards-table');
+      data.tables.fees = serializeTable('fee-table-rows');
+
+      try { localStorage.setItem('vaultsfyi-form', JSON.stringify(data)); } catch (e) {}
+    }
+
+    function restoreForm() {
+      let raw;
+      try { raw = localStorage.getItem('vaultsfyi-form'); } catch (e) {}
+      if (!raw) return;
+      let data;
+      try { data = JSON.parse(raw); } catch (e) { return; }
+      if (!data || data.v !== 1) return;
+
+      // 1) Set regular inputs
+      Object.entries(data.inputs).forEach(([key, value]) => {
+        if (key.startsWith('__cb__')) {
+          const el = document.getElementById(key.slice(6));
+          if (el) el.checked = value;
+        } else {
+          const radio = form.querySelector(`input[type="radio"][name="${key}"][value="${value}"]`);
+          if (radio) { radio.checked = true; return; }
+          const el = form.querySelector(`[name="${key}"]`) || document.getElementById(key);
+          if (el && el.type !== 'radio') el.value = value;
+        }
+      });
+
+      // 2) Fire conditional logic
+      form.querySelectorAll('input[type="radio"]:checked').forEach(el =>
+        el.dispatchEvent(new Event('change', { bubbles: true })));
+      form.querySelectorAll('input[type="checkbox"]').forEach(el =>
+        el.dispatchEvent(new Event('change', { bubbles: true })));
+
+      // 3) Restore dynamic tables
+      function restoreTable(tableId, rows, addFn) {
+        document.querySelectorAll(`#${tableId} .table-row`).forEach(r => r.remove());
+        if (!rows || rows.length === 0) { if (tableId === 'networks-table') addFn(); return; }
+        rows.forEach(vals => {
+          addFn();
+          const allRows = document.querySelectorAll(`#${tableId} .table-row`);
+          const row = allRows[allRows.length - 1];
+          const inputs = row.querySelectorAll('input, textarea');
+          vals.forEach((v, i) => { if (inputs[i] && !inputs[i].readOnly) inputs[i].value = v; });
+        });
+      }
+
+      restoreTable('networks-table', data.tables.networks, addNetworkRow);
+      restoreTable('rewards-table', data.tables.rewards, addRewardRow);
+
+      // 4) Restore fee table values (rows were created by checkbox triggers)
+      if (data.tables.fees) {
+        const rows = document.querySelectorAll('#fee-table-rows .table-row');
+        data.tables.fees.forEach((vals, i) => {
+          if (!rows[i]) return;
+          const inputs = rows[i].querySelectorAll('input');
+          vals.forEach((v, j) => { if (inputs[j] && !inputs[j].readOnly) inputs[j].value = v; });
+        });
+      }
+
+      document.getElementById('restored-banner').classList.add('visible');
+    }
+
+    restoreForm();
+
+    // =========================================================
+    // Export
+    // =========================================================
+
+    function collectTableData(tableId, fieldNames) {
+      const items = [];
+      document.querySelectorAll(`#${tableId} .table-row`).forEach(row => {
+        const inputs = row.querySelectorAll('input, textarea');
+        const obj = {};
+        let hasValue = false;
+        fieldNames.forEach((name, i) => {
+          const v = inputs[i]?.value || '';
+          obj[name] = v;
+          if (v && !inputs[i]?.readOnly) hasValue = true;
+        });
+        if (hasValue) items.push(obj);
+      });
+      return items;
+    }
+
+    function buildExportData() {
+      const v = name => {
+        const el = form.querySelector(`[name="${name}"]`) || document.getElementById(name);
+        if (!el) return '';
+        return el.value || '';
+      };
+      const r = name => radioVal(name);
+      const c = id => document.getElementById(id)?.checked || false;
+
+      return {
+        metadata: {
+          formVersion: '1.0',
+          exportedAt: new Date().toISOString()
+        },
+        protocolOverview: {
+          protocolName: v('protocolName'),
+          protocolVersion: v('protocolVersion'),
+          websiteUrl: v('websiteUrl'),
+          networks: collectTableData('networks-table', ['network', 'contractAddresses']),
+          upcomingDeployments: v('upcomingDeployments')
+        },
+        vaultArchitecture: {
+          erc4626Compliant: r('erc4626'),
+          positionToken: {
+            tokenType: v('positionTokenName'),
+            exampleAddress: v('positionTokenAddress'),
+            additionalAddresses: v('positionTokenAdditional'),
+            priceModel: r('positionTokenType'),
+            priceModelOther: v('positionTokenTypeOther'),
+            underlyingAssetFunction: v('underlyingAssetFunction'),
+            multiAssetInfo: v('multiAssetInfo')
+          },
+          sharePrice: { callChain: v('sharePriceCallChain') },
+          tvl: {
+            totalDepositsFunction: v('totalDepositsFunction'),
+            availableLiquidityFunction: v('availableLiquidityFunction')
+          },
+          vaultDiscovery: {
+            factory: c('discovery-factory') ? {
+              addresses: v('factoryAddresses'),
+              eventSignature: v('factoryEventSignature'),
+              deploymentBlocks: v('factoryDeploymentBlocks')
+            } : null,
+            registry: c('discovery-registry') ? {
+              addressOrUrl: v('registryAddress'),
+              functionOrEndpoint: v('registryFunction')
+            } : null,
+            fixedList: c('discovery-fixedList') ? { addresses: v('fixedListAddresses') } : null,
+            other: c('discovery-other') ? v('discoveryOtherDescription') : null,
+            creationModel: r('vaultCreation')
+          }
+        },
+        depositsAndWithdrawals: {
+          deposits: {
+            standardErc4626: r('standardDeposit'),
+            custom: {
+              functionSignature: v('depositFunction'),
+              targetContract: v('depositTargetContract'),
+              approvalPattern: r('approvalPattern'),
+              approvalPatternOther: v('approvalPatternOther'),
+              specialParameters: v('depositSpecialParams')
+            },
+            async: r('asyncDeposit'),
+            asyncDetails: {
+              requestFunction: v('asyncDepositRequest'),
+              claimFunction: v('asyncDepositClaim'),
+              contractAddresses: v('asyncDepositContracts'),
+              pendingClaimableFunction: v('asyncDepositPending'),
+              typicalWaitTime: v('asyncDepositWaitTime'),
+              claimWindowExpires: r('asyncDepositExpires')
+            }
+          },
+          withdrawalType: r('withdrawalType'),
+          withdrawalTypeOther: v('withdrawalTypeOther'),
+          withdrawalQueue: {
+            contractAddress: v('withdrawalQueueContract'),
+            requestFunction: v('withdrawalRequestFunction'),
+            claimFunction: v('withdrawalClaimFunction'),
+            pendingClaimableFunction: v('withdrawalPendingFunction'),
+            typicalWaitTime: v('withdrawalWaitTime'),
+            claimWindowExpires: r('withdrawalExpires'),
+            standardErc4626Withdrawal: r('standardWithdrawal'),
+            customFunction: v('customWithdrawalFunction'),
+            customTargetContract: v('customWithdrawalContract')
+          }
+        },
+        rewardTokens: {
+          hasRewards: r('hasRewards'),
+          distributionMechanism: {
+            onChain: c('dist-onchain'),
+            onChainDetails: {
+              controllerAddress: v('rewardsControllerAddress'),
+              claimFunction: v('rewardsClaimFunction'),
+              pendingFunction: v('rewardsPendingFunction'),
+              emissionRateFunction: v('rewardsEmissionFunction')
+            },
+            offChain: c('dist-offchain'),
+            offChainApiUrl: v('offchainApiUrl'),
+            autoCompounded: c('dist-autocompound'),
+            other: c('dist-other'),
+            otherDescription: v('distOtherDescription')
+          },
+          tokens: collectTableData('rewards-table', ['token', 'symbol', 'address', 'networks']),
+          sameOnAllNetworks: r('rewardsSameNetworks'),
+          emissionRateType: r('emissionRateType')
+        },
+        capacityAndLimits: {
+          hasDepositCaps: r('hasDepositCaps'),
+          capFunction: v('capFunction'),
+          utilizationFunction: v('utilizationFunction'),
+          maxDepositCorrect: r('maxDepositCorrect')
+        },
+        fees: {
+          types: ['performance', 'management', 'deposit', 'withdrawal'].filter(t => c(`fee-${t}`)),
+          none: c('fee-none'),
+          details: collectTableData('fee-table-rows', ['type', 'onChainFunction', 'format']),
+          takenFrom: v('feeTakenFrom'),
+          recipient: v('feeRecipient')
+        },
+        eventsAndIndexing: {
+          standardTransferEvents: r('standardTransfer'),
+          hasAuxiliaryEvents: r('hasAuxiliaryEvents'),
+          eventSignatures: v('eventSignatures'),
+          auxiliaryContracts: v('auxiliaryContracts'),
+          oneToOneMapping: r('oneToOneMapping'),
+          normalizationNotes: v('normalizationNotes'),
+          standardAddressPositions: r('standardAddressPositions'),
+          addressFieldNotes: v('addressFieldNotes'),
+          emitterToVaultMapping: v('emitterToVaultMapping')
+        },
+        allocationAndRisk: {
+          deploysCapital: r('deploysCapital'),
+          activeAllocationsFunction: v('activeAllocationsFunction'),
+          amountsFunction: v('allocationAmountsFunction'),
+          curatorManager: v('curatorManager'),
+          timelock: v('allocationTimelock')
+        },
+        additionalInfo: {
+          notes: v('additionalNotes'),
+          existingIntegrations: v('existingIntegrations'),
+          githubRepo: v('githubRepo')
+        }
+      };
+    }
+
+    window.exportJSON = function() {
+      const data = buildExportData();
+      const name = (data.protocolOverview.protocolName || 'protocol')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name}-vaultsfyi-integration.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('JSON downloaded');
+    };
+
+    window.copyJSON = function() {
+      const json = JSON.stringify(buildExportData(), null, 2);
+      navigator.clipboard.writeText(json).then(
+        () => showToast('Copied to clipboard'),
+        () => {
+          const ta = document.createElement('textarea');
+          ta.value = json;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast('Copied to clipboard');
+        }
+      );
+    };
+
+    window.clearForm = function() {
+      if (!confirm('Clear all form data and saved progress? This cannot be undone.')) return;
+      try { localStorage.removeItem('vaultsfyi-form'); } catch (e) {}
+      form.reset();
+      document.querySelectorAll('#networks-table .table-row').forEach(r => r.remove());
+      document.querySelectorAll('#rewards-table .table-row').forEach(r => r.remove());
+      document.getElementById('fee-table-rows').innerHTML = '';
+      document.querySelectorAll('.conditional').forEach(el => el.classList.remove('visible'));
+      document.getElementById('restored-banner').classList.remove('visible');
+      addNetworkRow();
+      showToast('Form cleared');
+    };
+
+    // =========================================================
+    // Toast
+    // =========================================================
+    let toastTimer;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+  });
+  </script>
+</body>
+</html>
