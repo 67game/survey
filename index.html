@@ -933,6 +933,16 @@
     setupConditional('deploysCapital', val => toggle('s8-details', val === 'yes'));
 
     // =========================================================
+    // Auto-save (declared early — dynamic tables need debouncedSave)
+    // =========================================================
+
+    let saveTimer;
+    function debouncedSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveForm, 400);
+    }
+
+    // =========================================================
     // Dynamic tables
     // =========================================================
 
@@ -1003,12 +1013,6 @@
     // =========================================================
     // Auto-save
     // =========================================================
-
-    let saveTimer;
-    function debouncedSave() {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveForm, 400);
-    }
 
     form.addEventListener('input', debouncedSave);
     form.addEventListener('change', debouncedSave);
