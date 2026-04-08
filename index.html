@@ -163,6 +163,25 @@
     .btn-danger { background: white; border-color: var(--border); color: var(--danger); }
     .btn-danger:hover { border-color: var(--danger); background: #fef2f2; }
 
+    /* Validation errors */
+    .field-error input, .field-error textarea, .field-error select { border-color: var(--danger) !important; }
+    .field-error .radio-group, .field-error .checkbox-group {
+      border: 1px solid var(--danger); border-radius: 6px; padding: 0.4rem 0.6rem;
+    }
+    .field-error .dynamic-table { border: 1px solid var(--danger); border-radius: 6px; padding: 0.5rem; }
+    .error-msg {
+      color: var(--danger); font-size: 0.78rem; margin-top: 0.2rem; font-weight: 500;
+      display: none;
+    }
+    .field-error .error-msg { display: block; }
+
+    .validation-summary {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 1rem;
+      font-size: 0.875rem; display: none;
+    }
+    .validation-summary.visible { display: block; }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--text); color: white;
@@ -816,6 +835,9 @@
 
     </form>
 
+    <!-- Validation summary -->
+    <div class="validation-summary" id="validation-summary"></div>
+
     <!-- Action buttons -->
     <div class="actions">
       <button type="button" class="btn btn-primary" onclick="exportJSON()">Download JSON</button>
@@ -1273,7 +1295,229 @@
       };
     }
 
+    // =========================================================
+    // Validation
+    // =========================================================
+
+    function isVisible(el) {
+      // Walk up to check if any ancestor .conditional lacks .visible
+      let node = el.closest('.conditional');
+      while (node) {
+        if (!node.classList.contains('visible')) return false;
+        node = node.parentElement.closest('.conditional');
+      }
+      return true;
+    }
+
+    function clearErrors() {
+      form.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
+      const summary = document.getElementById('validation-summary');
+      summary.classList.remove('visible');
+      summary.textContent = '';
+    }
+
+    function markError(field, msg) {
+      field.classList.add('field-error');
+      let errEl = field.querySelector('.error-msg');
+      if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.className = 'error-msg';
+        field.appendChild(errEl);
+      }
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+
+    function validateForm() {
+      clearErrors();
+      const errors = [];
+
+      // Helper: require a text/url/textarea field
+      function requireText(id, label) {
+        const el = document.getElementById(id) || form.querySelector(`[name="${id}"]`);
+        if (!el) return;
+        const field = el.closest('.field');
+        if (!field || !isVisible(field)) return;
+        if (!el.value.trim()) {
+          markError(field, 'Required');
+          errors.push(label);
+        }
+      }
+
+      // Helper: require at least one radio selected
+      function requireRadio(name, label) {
+        const radios = form.querySelectorAll(`[name="${name}"]`);
+        if (!radios.length) return;
+        const field = radios[0].closest('.field');
+        if (!field || !isVisible(field)) return;
+        const checked = form.querySelector(`[name="${name}"]:checked`);
+        if (!checked) {
+          markError(field, 'Please select an option');
+          errors.push(label);
+        }
+      }
+
+      // Helper: require at least one checkbox in a group
+      function requireCheckboxGroup(ids, label) {
+        const cbs = ids.map(id => document.getElementById(id)).filter(Boolean);
+        if (!cbs.length) return;
+        const field = cbs[0].closest('.field');
+        if (!field || !isVisible(field)) return;
+        if (!cbs.some(cb => cb.checked)) {
+          markError(field, 'Please select at least one option');
+          errors.push(label);
+        }
+      }
+
+      // Helper: require dynamic table has at least one filled row
+      function requireTable(tableId, label) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const field = table.closest('.field');
+        if (!field || !isVisible(field)) return;
+        const rows = table.querySelectorAll('.table-row');
+        let hasFilled = false;
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input, textarea');
+          inputs.forEach(inp => { if (inp.value.trim()) hasFilled = true; });
+        });
+        if (!hasFilled) {
+          markError(field, 'Add at least one entry');
+          errors.push(label);
+        }
+      }
+
+      // --- Section 1: Protocol Overview ---
+      requireText('protocolName', 'Protocol name');
+      requireText('protocolVersion', 'Protocol version');
+      requireText('websiteUrl', 'Website URL');
+      requireTable('networks-table', 'Networks & contracts');
+
+      // --- Section 2: Vault Architecture ---
+      requireRadio('erc4626', 'ERC-4626 compliance');
+
+      const erc4626Val = radioVal('erc4626');
+      if (erc4626Val === 'no' || erc4626Val === 'partially') {
+        requireText('positionTokenName', 'Position token name');
+        requireText('positionTokenAddress', 'Position token address');
+        requireRadio('positionTokenType', 'Token price model');
+        requireText('underlyingAssetFunction', 'Underlying asset function');
+        requireText('sharePriceCallChain', 'Share price call chain');
+        requireText('totalDepositsFunction', 'Total deposits function');
+      }
+
+      requireCheckboxGroup(['discovery-factory', 'discovery-registry', 'discovery-fixedList', 'discovery-other'], 'Vault discovery method');
+      requireRadio('vaultCreation', 'Vault creation model');
+
+      // Discovery sub-fields
+      if (document.getElementById('discovery-factory')?.checked) {
+        requireText('factoryAddresses', 'Factory addresses');
+        requireText('factoryEventSignature', 'Factory event signature');
+      }
+      if (document.getElementById('discovery-registry')?.checked) {
+        requireText('registryAddress', 'Registry address/URL');
+        requireText('registryFunction', 'Registry function');
+      }
+      if (document.getElementById('discovery-fixedList')?.checked) {
+        requireText('fixedListAddresses', 'Fixed list addresses');
+      }
+
+      // --- Section 3: Deposits & Withdrawals ---
+      requireRadio('standardDeposit', 'Standard ERC-4626 deposit');
+      if (radioVal('standardDeposit') === 'no') {
+        requireText('depositFunction', 'Deposit function');
+        requireText('depositTargetContract', 'Deposit target contract');
+        requireRadio('approvalPattern', 'Approval pattern');
+      }
+      requireRadio('asyncDeposit', 'Async deposit');
+      if (radioVal('asyncDeposit') === 'yes') {
+        requireText('asyncDepositRequest', 'Async deposit request function');
+        requireText('asyncDepositClaim', 'Async deposit claim function');
+      }
+      requireRadio('withdrawalType', 'Withdrawal type');
+      if (radioVal('withdrawalType') === 'other') {
+        requireText('withdrawalTypeOther', 'Withdrawal type description');
+      }
+      if (radioVal('withdrawalType') === 'request-redeem' || radioVal('withdrawalType') === 'cooldown') {
+        requireText('withdrawalRequestFunction', 'Withdrawal request function');
+        requireText('withdrawalClaimFunction', 'Withdrawal claim function');
+        requireRadio('standardWithdrawal', 'Standard ERC-4626 withdrawal');
+      }
+
+      // --- Section 4: Rewards ---
+      requireRadio('hasRewards', 'Reward tokens');
+      if (radioVal('hasRewards') === 'yes') {
+        requireCheckboxGroup(['dist-onchain', 'dist-offchain', 'dist-autocompound', 'dist-other'], 'Distribution mechanism');
+        requireRadio('rewardsSameNetworks', 'Same rewards on all networks');
+        requireRadio('emissionRateType', 'Emission rate type');
+      }
+
+      // --- Section 5: Capacity ---
+      requireRadio('hasDepositCaps', 'Deposit caps');
+      if (radioVal('hasDepositCaps') === 'yes') {
+        requireText('capFunction', 'Cap function');
+        requireRadio('maxDepositCorrect', 'maxDeposit correctness');
+      }
+
+      // --- Section 6: Fees ---
+      requireCheckboxGroup(['fee-performance', 'fee-management', 'fee-deposit', 'fee-withdrawal', 'fee-none'], 'Fee types');
+
+      // --- Section 7: Events ---
+      requireRadio('standardTransfer', 'Standard Transfer events');
+      if (radioVal('standardTransfer') === 'yes') {
+        requireRadio('hasAuxiliaryEvents', 'Auxiliary events');
+      }
+      if (radioVal('standardTransfer') === 'no' || radioVal('hasAuxiliaryEvents') === 'yes') {
+        requireText('eventSignatures', 'Event signatures');
+        requireRadio('oneToOneMapping', '1:1 event mapping');
+        requireRadio('standardAddressPositions', 'Standard address positions');
+      }
+
+      // --- Section 8: Allocation ---
+      requireRadio('deploysCapital', 'Deploys capital');
+      if (radioVal('deploysCapital') === 'yes') {
+        requireText('activeAllocationsFunction', 'Active allocations function');
+        requireText('allocationAmountsFunction', 'Allocation amounts function');
+      }
+
+      // Show summary
+      if (errors.length > 0) {
+        const summary = document.getElementById('validation-summary');
+        summary.textContent = `${errors.length} required field${errors.length > 1 ? 's' : ''} missing. Please complete all highlighted fields before exporting.`;
+        summary.classList.add('visible');
+        // Scroll to first error
+        const firstError = form.querySelector('.field-error');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return false;
+      }
+      return true;
+    }
+
+    // Clear errors on input
+    form.addEventListener('input', () => {
+      form.querySelectorAll('.field-error').forEach(f => {
+        const inputs = f.querySelectorAll('input, textarea, select');
+        inputs.forEach(inp => {
+          if (inp.value.trim()) {
+            f.classList.remove('field-error');
+            const errEl = f.querySelector('.error-msg');
+            if (errEl) errEl.style.display = 'none';
+          }
+        });
+      });
+    });
+    form.addEventListener('change', () => {
+      form.querySelectorAll('.field-error').forEach(f => {
+        f.classList.remove('field-error');
+        const errEl = f.querySelector('.error-msg');
+        if (errEl) errEl.style.display = 'none';
+      });
+      const summary = document.getElementById('validation-summary');
+      summary.classList.remove('visible');
+    });
+
     window.exportJSON = function() {
+      if (!validateForm()) return;
       const data = buildExportData();
       const name = (data.protocolOverview.protocolName || 'protocol')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -1290,6 +1534,7 @@
     };
 
     window.copyJSON = function() {
+      if (!validateForm()) return;
       const json = JSON.stringify(buildExportData(), null, 2);
       navigator.clipboard.writeText(json).then(
         () => showToast('Copied to clipboard'),
